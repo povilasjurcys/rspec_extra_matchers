@@ -4,7 +4,7 @@ require_relative "lib/rspec/extra_matchers/version"
 
 Gem::Specification.new do |spec|
   spec.name          = 'rspec-extra_matchers'
-  spec.version       = Rspec::ExtraMatchers::VERSION
+  spec.version       = RSpec::ExtraMatchers::VERSION
   spec.authors       = ['Povilas Jurcys']
   spec.email         = ['po.jurcys@gmail.com']
 

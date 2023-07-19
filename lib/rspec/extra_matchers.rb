@@ -2,7 +2,7 @@
 
 require_relative "extra_matchers/version"
 
-module Rspec
+module RSpec
   module ExtraMatchers
     class Error < StandardError; end
     # Your code goes here...
