@@ -37,7 +37,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
         let(:graphql_type) do
           Class.new(GraphQL::Schema::Object) do
             graphql_name "DummyUser#{rand(1**10)}"
-            field :id, Integer, null: false
+            field :id, GraphQL::Types::ID, null: false
             field :name, String, null: false
           end
         end
@@ -58,7 +58,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
       let(:record) { Struct.new(:id).new(1337) }
 
       it 'returns error message' do
-        expect(error_messages).to eq(['expected field "name" to be present'])
+        expect(error_messages).to eq(['Field "name" does not exist on record'])
       end
     end
 
@@ -66,7 +66,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
       let(:record_params) { super().merge(name: 123) }
 
       it 'returns error message' do
-        expect(error_messages).to eq(['expected field "name" to be `String`, but was `Integer`'])
+        expect(error_messages).to eq(['Expected field "name" to be `String`, but was `Integer`'])
       end
     end
 
@@ -74,8 +74,8 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
       let(:graphql_type) do
         Class.new(GraphQL::Schema::Object) do
           graphql_name "DummyUser#{rand(1**10)}"
-          field :id, Integer, null: false
-          field :myself, self, null: false
+          field :id, GraphQL::Types::ID, null: false
+          field :itself, self, null: false
         end
       end
 
@@ -92,46 +92,31 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
       end
 
       let(:graphql_type) do
+        enum = graphql_enum_type
         Class.new(super()) do
-          graphql.attribute(:role).type(graphql_enum_type)
+          graphql.attribute(:role).type(enum)
         end
       end
 
-      it { is_expected.to be_empty }
-    end
+      let(:record_class) { Struct.new(:id, :name, :location, :role, keyword_init: true) }
+      let(:record_params) { super().merge(role: :admin) }
 
-    context 'with custom type' do
-      let(:location_type) do
-        Class.new(GraphQL::Schema::Object) do
-          graphql_name "DummyLocation#{rand(1**10)}"
-          field :country, String, null: false
-          field :city, String, null: false
-        end
-      end
-
-      let(:graphql_type) do
-        Class.new(super()) do
-          graphql.attribute(:location).type(location_type)
-        end
-      end
-
-      # it { is_expected.to be_empty }
-
-      context 'when record matches graphql type' do
+      context 'when value matches enum' do
         it { is_expected.to be_empty }
       end
 
-      context 'when nested type does not match' do
-        let(:record_params) { super().merge(location: invalid_location) }
-        let(:invalid_location) { double('location', country: 'USA', city: 123) }
+      context 'when value does not match enum' do
+        let(:record_params) { super().merge(role: :invalid) }
 
         it 'returns error message' do
-          expect(error_messages).to eq(['expected non-nullable field "location" not to be `nil`'])
+          expect(error_messages).to eq(['Expected value of the "role" enum field to be one of [:admin, :regular], but was `:invalid`'])
         end
       end
     end
 
-    context 'with deeply nested types' do
+    context 'with custom inner type' do
+      let(:matcher) { super().tap(&:deeply) }
+
       let(:location_type) do
         Class.new(GraphQL::Schema::Object) do
           graphql_name "DummyLocation#{rand(1**10)}"
@@ -147,19 +132,39 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
         end
       end
 
-      before do
-        location_type.field :residents, [graphql_type], null: false
+      let(:record_class) { Struct.new(:id, :name, :location, keyword_init: true) }
+      let(:record_params) { super().merge(location: location) }
+      let(:location) { Struct.new(:country, :city).new('USA', 'New York') }
+
+      context 'when using deep mode' do
+        context 'when record matches graphql type' do
+          it { is_expected.to be_empty }
+        end
+
+        context 'when nested type does not match' do
+          let(:record_params) { super().merge(location: invalid_location) }
+          let(:location) { Struct.new(:country, :city).new('USA', 123) }
+          let(:invalid_location) { double('location', country: 'USA', city: 123) }
+
+          it 'returns error message' do
+            expect(error_messages).to eq(['Expected field "location.city" to be `String`, but was `Integer`'])
+          end
+        end
       end
 
-      context 'when record matches graphql type' do
-        it { is_expected.to be_empty }
-      end
+      context 'when using shallow mode' do
+        let(:matcher) { super().tap(&:shallow) }
 
-      context 'when record does not match graphql type' do
-        let(:record_params) { super().merge(location: nil) }
+        context 'when record matches graphql type' do
+          it { is_expected.to be_empty }
+        end
 
-        it 'returns error message' do
-          expect(error_messages).to eq(['expected non-nullable field "location" not to be `nil`'])
+        context 'when nested type does not match' do
+          let(:record_params) { super().merge(location: invalid_location) }
+          let(:location) { Struct.new(:country, :city).new('USA', 123) }
+          let(:invalid_location) { double('location', country: 'USA', city: 123) }
+
+          it { is_expected.to be_empty }
         end
       end
     end
