@@ -134,7 +134,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
 
       let(:record_class) { Struct.new(:id, :name, :location, keyword_init: true) }
       let(:record_params) { super().merge(location: location) }
-      let(:location) { Struct.new(:country, :city).new('USA', 'New York') }
+      let(:location) { double(country: 'USA', city: 'New York') }
 
       context 'when using deep mode' do
         context 'when record matches graphql type' do
@@ -148,6 +148,32 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
 
           it 'returns error message' do
             expect(error_messages).to eq(['Expected field "location.city" to be `String`, but was `Integer`'])
+          end
+        end
+
+        context 'when nested type is an array' do
+          let(:record_class) { Struct.new(:id, :name, :location, :locations, keyword_init: true) }
+          let(:graphql_type) do
+            location = location_type
+            Class.new(super()) do
+              graphql.attribute(:locations).type(location.to_list_type)
+            end
+          end
+          let(:record_params) { super().merge(locations: locations) }
+          let(:locations) { [location, location2] }
+          let(:location2) { double(country: 'USA', city: 'Washington') }
+
+          context 'when nested type matches' do
+            it { is_expected.to be_empty }
+          end
+
+          context 'when one array item does not match' do
+            let(:invalid_location) { double('location', country: 'USA', city: 123) }
+            let(:locations) { [location, invalid_location] }
+
+            it 'returns error message' do
+              expect(error_messages).to eq(['Expected field "locations[1].city" to be `String`, but was `Integer`'])
+            end
           end
         end
       end

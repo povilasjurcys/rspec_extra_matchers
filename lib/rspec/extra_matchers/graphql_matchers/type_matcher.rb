@@ -34,12 +34,13 @@ module RSpec
 
         attr_reader :error_messages, :graphql_type, :record
 
-        def initialize(graphql_type_or_model, parent_fields: [])
-          @parent_fields = parent_fields
+        def initialize(graphql_type_or_model, field_prefix: '', checked_records: Set.new)
+          @field_prefix = field_prefix
           @error_messages = []
-          @deeply = false
+          @deeply = true
           @strictly = true
           @graphql_type = extract_graphql_type(graphql_type_or_model)
+          @checked_records = checked_records
         end
 
         def matches?(record)
@@ -80,12 +81,14 @@ module RSpec
 
         private
 
-        def assert_deeply?
-          @deeply
+        attr_reader :field_prefix, :checked_records
+
+        def assert_deeply?(value)
+          @deeply && !checked_records.include?(value)
         end
 
         def extract_graphql_type(klass)
-          klass < GraphqlRails::Model ? klass.graphql.graphql_type : klass
+          klass.is_a?(Class) && klass < GraphqlRails::Model ? klass.graphql.graphql_type : klass
         end
 
         def strict?
@@ -93,7 +96,7 @@ module RSpec
         end
 
         def assert_type
-          graphql_type.fields.each_value do |field|
+          graphql_type.unwrap.fields.each_value do |field|
             assert_field(field)
           end
         end
@@ -107,7 +110,7 @@ module RSpec
           return assert_list_field(value, field) if value.is_a?(Array)
           return assert_basic_field(value, field) if basic_field?(field)
           return assert_enum_field(value, field) if enum_field?(field)
-          return assert_nested_field(value, field) if assert_deeply?
+          return assert_nested_field(value, field) if assert_deeply?(value)
         end
 
         def record_field_exist?(field)
@@ -131,7 +134,9 @@ module RSpec
         end
 
         def assert_list_field(value, field)
-          value.each { |item| assert_field_value(field.type.unwrap, item) }
+          value.each_with_index do |item, i|
+            assert_nested_field(item, field, type: field.type.unwrap, suffix: "[#{i}]")
+          end
         end
 
         def assert_basic_field(value, field)
@@ -160,8 +165,14 @@ module RSpec
           add_error(:wrong_enum_value, message_options)
         end
 
-        def assert_nested_field(value, field)
-          inner_matcher = self.class.new(field.type, parent_fields: @parent_fields + [field])
+        def assert_nested_field(value, field, type: field.type, suffix: '')
+          full_field_prefix = full_field_name(field, suffix: suffix)
+          all_checked_records = checked_records + [value]
+          inner_matcher = self.class.new(
+            type,
+            field_prefix: full_field_prefix,
+            checked_records: all_checked_records
+          )
           return if inner_matcher.matches?(value)
 
           @error_messages += inner_matcher.error_messages
@@ -175,9 +186,8 @@ module RSpec
           field.type.unwrap < GraphQL::Schema::Enum
         end
 
-        def full_field_name(field)
-          names = @parent_fields.map(&:name) + [field.name]
-          names.join('.')
+        def full_field_name(field, suffix: '')
+          [field_prefix, "#{field.name}#{suffix}", ].reject(&:blank?).join('.')
         end
 
         def add_error(type, **message_options)
