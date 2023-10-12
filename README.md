@@ -22,7 +22,27 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+To make custom matchers accessible, add this to your `spec_helper.rb`:
+
+```ruby
+require 'rspec/custom_matchers'
+
+RSpec.configure do |config|
+  config.include RSpec::CustomMatchers
+end
+```
+
+### `satisfy_graphql_type` matcher
+
+```ruby
+describe Graphql::UserType do
+  it 'valid type for user' do
+    user = User.new(name: 'John Doe')
+
+    expect(described_class).to be_valid_graphql_type_for(user)
+  end
+end
+```
 
 ## Development
 

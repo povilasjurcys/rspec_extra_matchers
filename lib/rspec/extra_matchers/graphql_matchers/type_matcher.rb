@@ -3,7 +3,6 @@
 # Usage:
 # expect(user).to satisfy_graphql_type(UserDecorator)
 # expect(user).to satisfy_graphql_type(Types::UserType)
-# expect(user_decorator).to be_valid_graphql_model
 
 module RSpec
   module ExtraMatchers
@@ -14,31 +13,24 @@ module RSpec
 
         include RSpec::Matchers::Composable
 
-        TYPE_MAPPING = {
-          GraphQL::Types::Int => [Integer],
-          GraphQL::Types::ID => [Integer, String],
-          GraphQL::Types::String => [String],
-          GraphQL::Types::Float => [Float, Integer, Numeric]
-        }.freeze
-
         ERROR_MESSAGES = {
           not_nullable: 'expected non-nullable field "%<field>s" not to be `nil`',
           nil_in_strict_mode:
             'Using `strictly` matcher which does not allow `nil` values, but field "%<field>s" is `nil`.' \
             'Use `loosely` matcher to allow `nil` values"',
           wrong_type: 'Expected field "%<field>s" to be %<expected_type>s, but was `%<actual_type>s`',
-          missing_field: 'Field "%<field>s" does not exist on record',
+          missing_field: 'Method `%<property>s` for "%<field>s" field does not exist on record',
           wrong_enum_value: 'Expected value of the "%<field>s" enum field to be one of %<expected_values>s, ' \
                             'but was `%<actual_value>s`'
         }
 
-        attr_reader :error_messages, :graphql_type, :record
+        attr_reader :detailed_error_messages, :graphql_type, :record
 
-        def initialize(graphql_type_or_model, field_prefix: '', checked_records: Set.new)
+        def initialize(graphql_type_or_model, field_prefix: '', checked_records: Set.new, deeply: true, strictly: true)
           @field_prefix = field_prefix
-          @error_messages = []
-          @deeply = true
-          @strictly = true
+          @detailed_error_messages = []
+          @deeply = deeply
+          @strictly = strictly
           @graphql_type = extract_graphql_type(graphql_type_or_model)
           @checked_records = checked_records
         end
@@ -68,15 +60,15 @@ module RSpec
 
         def failure_message
           message = "Expected #{@record} to match #{graphql_type}, but it didn't:\n"
-          message + @error_messages.take(5).join("\n").indent(2)
-        end
-
-        def failure_message_when_negated
-          "Expected to not run #{count_range_description}, #{actual_result_message}"
+          message + error_messages.take(5).join("\n").indent(2)
         end
 
         def description
-          "make DB requests #{count_range_description}"
+          "matches GraphQL type #{graphql_type}"
+        end
+
+        def error_messages
+          detailed_error_messages.map { |error| error_message_for(**error) }
         end
 
         private
@@ -107,10 +99,14 @@ module RSpec
           value = fetch_value(field)
 
           return assert_nullable_field(field) if value.nil?
-          return assert_list_field(value, field) if value.is_a?(Array)
+          return assert_list_field(value, field) if list_value?(value)
           return assert_basic_field(value, field) if basic_field?(field)
           return assert_enum_field(value, field) if enum_field?(field)
           return assert_nested_field(value, field) if assert_deeply?(value)
+        end
+
+        def list_value?(value)
+          value.is_a?(Array) || value.is_a?(ActiveRecord::Relation)
         end
 
         def record_field_exist?(field)
@@ -118,11 +114,11 @@ module RSpec
         end
 
         def fetch_value(field)
-          @record.send(field.name.underscore)
+          @record.send(field.method_sym)
         end
 
         def add_missing_field_error(field)
-          add_error(:missing_field, field: field)
+          add_error(:missing_field, field: field, property: field.method_str)
         end
 
         def assert_nullable_field(field)
@@ -135,12 +131,17 @@ module RSpec
 
         def assert_list_field(value, field)
           value.each_with_index do |item, i|
-            assert_nested_field(item, field, type: field.type.unwrap, suffix: "[#{i}]")
+            assert_nested_field(item, field, type: unwrap_list(field.type), suffix: "[#{i}]")
           end
         end
 
+        def unwrap_list(type)
+          type = type.of_type while type.list?
+          type
+        end
+
         def assert_basic_field(value, field)
-          compatible_classes = TYPE_MAPPING[field.type.unwrap]
+          compatible_classes = compatible_classes_for(field.type.unwrap)
           return if compatible_classes.any? { |klass| value.is_a?(klass) }
 
           expected_type =
@@ -153,6 +154,28 @@ module RSpec
           add_error(:wrong_type, field: field, expected_type: expected_type, actual_type: value.class.to_s)
         end
 
+        def compatible_classes_for(graphql_scalar) # rubocop:disable Metrics/MethodLength
+          if graphql_scalar <= GraphQL::Types::Int
+            [Integer]
+          elsif graphql_scalar <= GraphQL::Types::ID
+            [Integer, String]
+          elsif graphql_scalar <= GraphQL::Types::String
+            [String]
+          elsif graphql_scalar <= GraphQL::Types::Float
+            [Float, Integer, Numeric]
+          elsif graphql_scalar <= GraphQL::Types::Boolean
+            [TrueClass, FalseClass]
+          elsif graphql_scalar <= GraphQL::Types::ISO8601DateTime
+            [Time, DateTime]
+          elsif graphql_scalar <= GraphQL::Types::ISO8601Date
+            [Date]
+          elsif graphql_scalar <= GraphQL::Types::JSON
+            [Hash, Array, String, Integer, Float, TrueClass, FalseClass, NilClass]
+          else
+            raise "Unknown scalar type #{graphql_scalar}"
+          end
+        end
+
         def assert_enum_field(value, field)
           expected_values = field.type.unwrap.values.values.map(&:value)
           return if expected_values.include?(value)
@@ -162,7 +185,7 @@ module RSpec
             expected_values: expected_values.inspect,
             actual_value: value.inspect
           }
-          add_error(:wrong_enum_value, message_options)
+          add_error(:wrong_enum_value, **message_options)
         end
 
         def assert_nested_field(value, field, type: field.type, suffix: '')
@@ -175,11 +198,11 @@ module RSpec
           )
           return if inner_matcher.matches?(value)
 
-          @error_messages += inner_matcher.error_messages
+          @detailed_error_messages += inner_matcher.detailed_error_messages
         end
 
         def basic_field?(field)
-          TYPE_MAPPING.keys.include?(field.type.unwrap)
+          field.type.unwrap < GraphQL::Schema::Scalar
         end
 
         def enum_field?(field)
@@ -190,10 +213,12 @@ module RSpec
           [field_prefix, "#{field.name}#{suffix}", ].reject(&:blank?).join('.')
         end
 
+        def error_message_for(type:, **error_options)
+          format(ERROR_MESSAGES.fetch(type), error_options)
+        end
+
         def add_error(type, **message_options)
-          error_options = format_error_options(message_options)
-          message = ERROR_MESSAGES.fetch(type) % error_options
-          @error_messages << message
+          @detailed_error_messages << format_error_options(message_options).merge(type: type)
         end
 
         def format_error_options(message_options)
