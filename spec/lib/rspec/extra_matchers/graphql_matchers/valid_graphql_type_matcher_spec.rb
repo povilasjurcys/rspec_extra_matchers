@@ -57,8 +57,9 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::ValidGraphqlTypeMatcher do
     context 'when field on record does not exist' do
       let(:record) { Struct.new(:id).new(1337) }
 
-      it 'returns error message' do
-        expect(error_messages).to eq(['Field "name" does not exist on record'])
+      it 'returns error message', :aggregate_failures do
+        expect(error_messages.size).to eq(1)
+        expect(error_messages.first).to match(/Method `name` for "name" field does not exist on record/)
       end
     end
 

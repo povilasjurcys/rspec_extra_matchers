@@ -57,8 +57,9 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
     context 'when field on record does not exist' do
       let(:record) { Struct.new(:id).new(1337) }
 
-      it 'returns error message' do
-        expect(error_messages).to eq(['Field "name" does not exist on record'])
+      it 'returns error message', :aggregate_failures do
+        expect(error_messages.size).to eq(1)
+        expect(error_messages.first).to match(/Method `name` for "name" field does not exist on record/)
       end
     end
 
@@ -134,7 +135,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
 
       let(:record_class) { Struct.new(:id, :name, :location, keyword_init: true) }
       let(:record_params) { super().merge(location: location) }
-      let(:location) { double(country: 'USA', city: 'New York') }
+      let(:location) { double('Location', country: 'USA', city: 'New York') }
 
       context 'when using deep mode' do
         context 'when record matches graphql type' do
@@ -144,7 +145,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
         context 'when nested type does not match' do
           let(:record_params) { super().merge(location: invalid_location) }
           let(:location) { Struct.new(:country, :city).new('USA', 123) }
-          let(:invalid_location) { double('location', country: 'USA', city: 123) }
+          let(:invalid_location) { double('InvalidLocation', country: 'USA', city: 123) }
 
           it 'returns error message' do
             expect(error_messages).to eq(['Expected field "location.city" to be `String`, but was `Integer`'])
@@ -161,14 +162,14 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
           end
           let(:record_params) { super().merge(locations: locations) }
           let(:locations) { [location, location2] }
-          let(:location2) { double(country: 'USA', city: 'Washington') }
+          let(:location2) { double('Location2', country: 'USA', city: 'Washington') }
 
           context 'when nested type matches' do
             it { is_expected.to be_empty }
           end
 
           context 'when one array item does not match' do
-            let(:invalid_location) { double('location', country: 'USA', city: 123) }
+            let(:invalid_location) { double('InvalidLocation', country: 'USA', city: 123) }
             let(:locations) { [location, invalid_location] }
 
             it 'returns error message' do
@@ -188,7 +189,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::TypeMatcher do
         context 'when nested type does not match' do
           let(:record_params) { super().merge(location: invalid_location) }
           let(:location) { Struct.new(:country, :city).new('USA', 123) }
-          let(:invalid_location) { double('location', country: 'USA', city: 123) }
+          let(:invalid_location) { double('InvalidLocation', country: 'USA', city: 123) }
 
           it { is_expected.to be_empty }
         end
