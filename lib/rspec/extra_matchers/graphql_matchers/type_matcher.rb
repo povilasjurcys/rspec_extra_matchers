@@ -24,7 +24,8 @@ module RSpec
           wrong_type: 'Expected field "%<field_name>s" to be %<expected_type>s, but was `%<actual_type>s`',
           missing_field: 'Method `%<property>s` for "%<field_name>s" field does not exist on record %<record>s',
           wrong_enum_value: 'Expected value of the "%<field_name>s" enum field to be one of %<expected_values>s, ' \
-                            'but was `%<actual_value>s`'
+                            'but was `%<actual_value>s`',
+          not_a_graphql_type: 'Expected a GraphQL type, but got %<graphql_type>s'
         }.freeze
 
         attr_reader :detailed_error_messages, :graphql_type, :record
@@ -87,7 +88,11 @@ module RSpec
         end
 
         def assert_type
-          graphql_type.unwrap.fields.each_value { |field| assert_field(field) }
+          if graphql_type < GraphQL::Schema::Member
+            graphql_type.unwrap.fields.each_value { |field| assert_field(field) }
+          else
+            @detailed_error_messages << { type: :not_a_graphql_type, graphql_type: graphql_type }
+          end
         end
 
         def assert_field(field)

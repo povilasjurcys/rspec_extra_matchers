@@ -6,6 +6,7 @@ module RSpec
     module GraphqlMatchers
       require_relative 'graphql_matchers/type_matcher'
       require_relative 'graphql_matchers/valid_graphql_type_matcher'
+      require_relative 'graphql_matchers/valid_graphql_decorator_matcher'
 
       def satisfy_graphql_type(graphql_type)
         TypeMatcher.new(graphql_type)
@@ -13,6 +14,10 @@ module RSpec
 
       def be_valid_graphql_type_for(record)
         ValidGraphqlTypeMatcher.new(record)
+      end
+
+      def be_valid_graphql_decorator
+        ValidGraphqlDecoratorMatcher.new
       end
 
       def be_loosely_valid_graphql_type_for(record)

@@ -32,7 +32,25 @@ RSpec.configure do |config|
 end
 ```
 
+## Matchers
+
 ### `satisfy_graphql_type` matcher
+
+`satisfy_graphql_type` checks if a given instance is suitable for a given graphql type:
+
+```ruby
+describe User do
+  it 'valid type for user' do
+    user = User.new(name: 'John Doe')
+
+    expect(user).to satisfy_graphql_type(Graphql::UserType)
+  end
+end
+```
+
+### `be_valid_graphql_type_for` matcher
+
+The opposite of `satisfy_graphql_type`. Checks if given GraphQL type or decorator is suitable for given instance:
 
 ```ruby
 describe Graphql::UserType do
@@ -40,6 +58,41 @@ describe Graphql::UserType do
     user = User.new(name: 'John Doe')
 
     expect(described_class).to be_valid_graphql_type_for(user)
+  end
+end
+```
+
+### `be_valid_graphql_type` matcher
+
+Shortcut for:
+
+```ruby
+expect(record.class).to be_valid_graphql_type_for(record)
+```
+
+Useful when working with GraphqlRails style types:
+
+```ruby
+class Graphql::UserDecorator
+  include GraphqlRails::Decorator
+
+  graphql do |c|
+    c.attribute(:id).type('ID!')
+  end
+
+  delegate :id, to: :@user
+
+  def initialize(user)
+    @user = user
+  end
+end
+
+describe Graphql::UserDecorator do
+  it 'valid type for user' do
+    user = User.new(name: 'John Doe')
+    user_decorator = described_class.new(user)
+
+    expect(user_decorator).to be_valid_graphql_type
   end
 end
 ```

@@ -5,6 +5,7 @@
 # expect(Types::UserType).to be_valid_graphql_type_for(user)
 
 require 'rspec/extra_matchers/graphql_matchers/type_matcher'
+require 'active_support/core_ext/string/indent'
 
 module RSpec
   module ExtraMatchers
