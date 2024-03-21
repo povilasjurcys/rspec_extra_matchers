@@ -1,4 +1,4 @@
-# Rspec::ExtraMatchers
+# RSpec::ExtraMatchers
 
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rspec/extra_matchers`. To experiment with that code, run `bin/console` for an interactive prompt.
 
@@ -22,7 +22,80 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+To make custom matchers accessible, add this to your `spec_helper.rb`:
+
+```ruby
+require 'rspec/custom_matchers'
+
+RSpec.configure do |config|
+  config.include RSpec::CustomMatchers
+end
+```
+
+## Matchers
+
+### `satisfy_graphql_type` matcher
+
+`satisfy_graphql_type` checks if a given instance is suitable for a given graphql type:
+
+```ruby
+describe User do
+  it 'valid type for user' do
+    user = User.new(name: 'John Doe')
+
+    expect(user).to satisfy_graphql_type(Graphql::UserType)
+  end
+end
+```
+
+### `be_valid_graphql_type_for` matcher
+
+The opposite of `satisfy_graphql_type`. Checks if given GraphQL type or decorator is suitable for given instance:
+
+```ruby
+describe Graphql::UserType do
+  it 'valid type for user' do
+    user = User.new(name: 'John Doe')
+
+    expect(described_class).to be_valid_graphql_type_for(user)
+  end
+end
+```
+
+### `be_valid_graphql_type` matcher
+
+Shortcut for:
+
+```ruby
+expect(record.class).to be_valid_graphql_type_for(record)
+```
+
+Useful when working with GraphqlRails style types:
+
+```ruby
+class Graphql::UserDecorator
+  include GraphqlRails::Decorator
+
+  graphql do |c|
+    c.attribute(:id).type('ID!')
+  end
+
+  delegate :id, to: :@user
+
+  def initialize(user)
+    @user = user
+  end
+end
+
+describe Graphql::UserDecorator do
+  it 'valid type for user' do
+    user = User.new(name: 'John Doe')
+    user_decorator = described_class.new(user)
+
+    expect(user_decorator).to be_valid_graphql_type
+  end
+end
+```
 
 ## Development
 
@@ -32,7 +105,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/rspec-extra_matchers. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/rspec-extra_matchers/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/povilasjurcys/rspec-extra_matchers. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/povilasjurcys/rspec-extra_matchers/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -40,4 +113,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the Rspec::ExtraMatchers project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/rspec-extra_matchers/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the RSpec::ExtraMatchers project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/povilasjurcys/rspec-extra_matchers/blob/master/CODE_OF_CONDUCT.md).

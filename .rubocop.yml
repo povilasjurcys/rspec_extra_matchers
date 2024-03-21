@@ -46,3 +46,7 @@ AllCops:
     - bin/*
     - "*.gemspec"
     - Rakefile
+
+AllCops:
+  Exclude:
+    - 'vendor/'
