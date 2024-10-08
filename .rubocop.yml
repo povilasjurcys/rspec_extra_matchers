@@ -1,9 +1,28 @@
-require: rubocop-rspec
+require:
+  - rubocop-rspec
+  - rubocop-rake
+
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.3
+  Exclude:
+    - bin/*
+    - "*.gemspec"
+    - Rakefile
+    - vendor/**/*.rb
+    - gemfiles/vendor/bundle/**/*
 
 RSpec/NestedGroups:
   Enabled: false
 
 RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/SpecFilePathFormat:
   Enabled: false
 
 Layout/LineLength:
@@ -39,14 +58,4 @@ Style/ClassAndModuleChildren:
   Exclude:
     - spec/**/*_spec.rb
 
-AllCops:
-  NewCops: enable
-  TargetRubyVersion: 2.7
-  Exclude:
-    - bin/*
-    - "*.gemspec"
-    - Rakefile
 
-AllCops:
-  Exclude:
-    - 'vendor/'

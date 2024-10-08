@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'rspec/extra_matchers/graphql_matchers/valid_graphql_type_matcher'
+require 'rspec_extra_matchers/graphql_matchers/valid_graphql_type_matcher'
 
 # rubocop:disable RSpec/VerifiedDoubles
-RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::ValidGraphqlTypeMatcher do
+RSpec.describe RSpecExtraMatchers::GraphqlMatchers::ValidGraphqlTypeMatcher do
   subject(:matcher) { described_class.new(record) }
 
   let(:record_class) { Struct.new(:id, :name, :location, keyword_init: true) }
@@ -110,7 +110,8 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::ValidGraphqlTypeMatcher do
         let(:record_params) { super().merge(role: :invalid) }
 
         it 'returns error message' do
-          expect(error_messages).to eq(['Expected value of the "role" enum field to be one of [:admin, :regular], but was `:invalid`'])
+          expect(error_messages)
+            .to eq(['Expected value of the "role" enum field to be one of [:admin, :regular], but was `:invalid`'])
         end
       end
     end
@@ -134,7 +135,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::ValidGraphqlTypeMatcher do
       end
 
       let(:record_class) { Struct.new(:id, :name, :location, keyword_init: true) }
-      let(:record_params) { super().merge(location: location) }
+      let(:record_params) { super().merge(location:) }
       let(:location) { double(country: 'USA', city: 'New York') }
 
       context 'when using deep mode' do
@@ -160,7 +161,7 @@ RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::ValidGraphqlTypeMatcher do
               graphql.attribute(:locations).type(location.to_list_type)
             end
           end
-          let(:record_params) { super().merge(locations: locations) }
+          let(:record_params) { super().merge(locations:) }
           let(:locations) { [location, location2] }
           let(:location2) { double(country: 'USA', city: 'Washington') }
 

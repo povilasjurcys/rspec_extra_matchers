@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-require_relative "lib/rspec/extra_matchers/version"
+require_relative "lib/rspec_extra_matchers/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = 'rspec-extra_matchers'
-  spec.version       = RSpec::ExtraMatchers::VERSION
+  spec.name          = 'rspec_extra_matchers'
+  spec.version       = RSpecExtraMatchers::VERSION
   spec.authors       = ['Povilas Jurcys']
   spec.email         = ['po.jurcys@gmail.com']
 
   spec.summary       = 'Additional matchers for RSpec.'
-  spec.homepage      = 'https://github.com/povilasjurcys/rspec-extra_matchers'
+  spec.homepage      = 'https://github.com/povilasjurcys/rspec_extra_matchers'
   spec.license       = 'MIT'
   spec.required_ruby_version = '>= 2.4.0'
 
@@ -36,6 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'graphql_rails'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'rubocop-rspec'
+  spec.add_development_dependency 'rubocop-rake'
 
   # Uncomment to register a new dependency of your gem
   # spec.add_dependency "example-gem", "~> 1.0"

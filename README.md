@@ -1,4 +1,4 @@
-# RSpec::ExtraMatchers
+# RSpecExtraMatchers
 
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rspec/extra_matchers`. To experiment with that code, run `bin/console` for an interactive prompt.
 
@@ -9,7 +9,7 @@ TODO: Delete this and the text above, and describe your gem
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'rspec-extra_matchers'
+gem 'rspec_extra_matchers'
 ```
 
 And then execute:
@@ -18,17 +18,17 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install rspec-extra_matchers
+    $ gem install rspec_extra_matchers
 
 ## Usage
 
-To make custom matchers accessible, add this to your `spec_helper.rb`:
+To make RSpec extra matchers accessible, add this to your `spec_helper.rb`:
 
 ```ruby
-require 'rspec/custom_matchers'
+require 'rspec_extra_matchers'
 
 RSpec.configure do |config|
-  config.include RSpec::CustomMatchers
+  config.include RSpecExtraMatchers
 end
 ```
 
@@ -62,7 +62,7 @@ describe Graphql::UserType do
 end
 ```
 
-### `be_valid_graphql_type` matcher
+### `be_valid_graphql_decorator` matcher
 
 Shortcut for:
 
@@ -92,7 +92,7 @@ describe Graphql::UserDecorator do
     user = User.new(name: 'John Doe')
     user_decorator = described_class.new(user)
 
-    expect(user_decorator).to be_valid_graphql_type
+    expect(user_decorator).to be_valid_graphql_decorator
   end
 end
 ```
@@ -105,7 +105,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/povilasjurcys/rspec-extra_matchers. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/povilasjurcys/rspec-extra_matchers/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/povilasjurcys/rspec_extra_matchers. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/povilasjurcys/rspec_extra_matchers/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -113,4 +113,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the RSpec::ExtraMatchers project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/povilasjurcys/rspec-extra_matchers/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the RSpecExtraMatchers project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/povilasjurcys/rspec_extra_matchers/blob/master/CODE_OF_CONDUCT.md).

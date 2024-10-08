@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'rspec/extra_matchers/graphql_matchers'
+require 'rspec_extra_matchers/graphql_matchers'
 require 'graphql'
 require 'graphql_rails'
 
-RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers do
-  include RSpec::ExtraMatchers::GraphqlMatchers
+RSpec.describe RSpecExtraMatchers::GraphqlMatchers do
+  include RSpecExtraMatchers::GraphqlMatchers # rubocop:disable RSpec/DescribedClass
 
   let(:record_class) { Struct.new(:id, :name, :location, keyword_init: true) }
   let(:record) { record_class.new(record_params) }
