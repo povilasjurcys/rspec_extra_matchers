@@ -112,7 +112,8 @@ RSpec.describe RSpecExtraMatchers::GraphqlMatchers::SuccessfulGraphqlControllerR
         let(:response_result) { ['Some string'] }
 
         it 'returns clear message' do
-          expect(failure_message).to include('Response type does not match the expected type')
+          expect(failure_message)
+            .to eq("Expected response to be an instance of #{action_response_type}, but it's String")
         end
       end
 

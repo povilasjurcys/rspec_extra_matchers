@@ -97,6 +97,29 @@ describe Graphql::UserDecorator do
 end
 ```
 
+### `be_successful_graphql_controller_response` matcher
+
+Works with GraphqlRails only. Checks if controller response matches what is defined in action configuration
+
+```ruby
+class Graphql::UsersController
+  action(:index).returns('[User]')
+  def index
+    User.all
+  end
+end
+
+describe Graphql::UsersController, type: :graphql_controller do
+  describe '#index' do
+    subject(:response) { query(:index) }
+
+    it 'returns successful response' do
+      expect(response).to be_successful_graphql_controller_response
+    end
+  end
+end
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

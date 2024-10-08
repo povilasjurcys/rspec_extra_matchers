@@ -34,6 +34,7 @@ module RSpecExtraMatchers
       def validate_response_type
         validate_response_type_null_matching &&
           validate_response_type_list_matching &&
+          validate_graphql_model_matching &&
           validate_response_graphql_attributes_matching
 
         error_message.nil?
@@ -57,10 +58,21 @@ module RSpecExtraMatchers
         error_message.nil?
       end
 
+      def validate_graphql_model_matching
+        return true if response_result.nil? || unwrapped_result_instance.nil?
+        return true if action_response_graphql_model.nil?
+        return true if unwrapped_result_instance.is_a?(action_response_graphql_model)
+
+        add_error(
+          "Expected response to be an instance of #{action_response_graphql_model}, " \
+          "but it's #{unwrapped_result_instance.class}"
+        )
+        false
+      end
+
       def validate_response_graphql_attributes_matching
-        result_instance = list_response? ? response_result.first : response_result
         matcher = TypeMatcher.new(action_response_graphql_type.unwrap, deeply: false, strictly: false)
-        matcher.matches?(result_instance)
+        matcher.matches?(unwrapped_result_instance)
         return if matcher.error_messages.empty?
 
         error_message =
@@ -68,6 +80,12 @@ module RSpecExtraMatchers
           "#{matcher.error_messages.take(5).join("\n").indent(2)}"
 
         add_error(error_message)
+      end
+
+      def unwrapped_result_instance
+        return response_result.first if list_response?
+
+        response_result
       end
 
       def list_response?
