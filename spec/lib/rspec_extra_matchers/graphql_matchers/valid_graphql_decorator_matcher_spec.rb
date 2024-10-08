@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec/extra_matchers/graphql_matchers/valid_graphql_decorator_matcher'
+require 'rspec_extra_matchers/graphql_matchers/valid_graphql_decorator_matcher'
 
-RSpec.describe RSpec::ExtraMatchers::GraphqlMatchers::ValidGraphqlDecoratorMatcher do
+RSpec.describe RSpecExtraMatchers::GraphqlMatchers::ValidGraphqlDecoratorMatcher do
   subject(:matcher) { described_class.new }
 
   let(:record_params) { { id: '123', name: 'John' } }

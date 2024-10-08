@@ -8,7 +8,7 @@ SimpleCov.start do
   add_filter(/_spec.rb\Z/)
 end
 
-require 'rspec/extra_matchers'
+require 'rspec_extra_matchers'
 require 'graphql'
 require 'graphql_rails'
 require 'pry-byebug'
